@@ -16,28 +16,35 @@ class Connections {
     this.peer = new Peer(this.id, {key: '86tco3u7cf03sor'})
   }
 
-  startHost() {
+  startHost(changeState) {
     this.host = true
     this._initializePeer()
-    this.peer.on('connection', this._onConnection.bind(this))
+    this.peer.on('connection', this._onConnection(changeState).bind(this))
   }
 
-  _onConnection(conn) {
-    this.connections.push({id: conn.id, conn: conn})
-    conn.on('data', data => {
-      console.log(conn, 'data', data)
-    })
+  _onConnection(changeState) {
+    return function(conn)  {
+      this.connections.push({id: conn.id, conn: conn})
+      conn.on('data', data => {
+        console.log('-*-receive action:', data)
+        changeState(data)
+      })
+    }
   }
 
   join(id) {
     this.host = false
     this._initializePeer()
-    this.peer.connect(id)
+    const conn = this.peer.connect(id)
+    this.connections.push({ id, conn })
     this.peer.on('open', this._onOpen.bind(this))
   }
 
   sendToHost(action) {
-    this.peer.send({action: action})
+    this.connections.map(({ conn }) => {
+      console.log('-*-send action:', action)
+      conn.on('open', () => conn.send({action: action}))
+    })
   }
 
   _onOpen() {

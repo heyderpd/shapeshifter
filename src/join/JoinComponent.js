@@ -4,7 +4,7 @@ import Connections from '../peers/Connections'
 
 
 class JoinComponent extends Component {
-  
+
   constructor() {
     super()
     this.state = {
@@ -21,13 +21,14 @@ class JoinComponent extends Component {
   startJoin() {
     Connections.join(this.state.joinTo)
   }
-  
+
   render() {
     return (
       <div>
         <h1>join</h1>
         <input value={this.state.joinTo} onChange={e => this.changeJoinTo(e)} />
         <button onClick={() => this.startJoin()}>JOIN</button>
+        <button onClick={() => Connections.sendToHost('xabla')}>send xabla</button>
       </div>
     )
   }
