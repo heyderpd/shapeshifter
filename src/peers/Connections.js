@@ -9,42 +9,52 @@ class Connections {
     this.opened = false
     this.id = null
     this.connections = []
+    this.listener
   }
 
   _initializePeer() {
     this.id = randomstring.generate(5)
-    this.peer = new Peer(this.id, {key: '86tco3u7cf03sor'})
+    this.peer = new Peer(this.id, { key: '86tco3u7cf03sor' })
   }
 
-  startHost(changeState) {
+  startHost() {
     this.host = true
     this._initializePeer()
-    this.peer.on('connection', this._onConnection(changeState).bind(this))
+    this.peer.on('connection', this._onConnection.bind(this))
   }
 
-  _onConnection(changeState) {
-    return function(conn)  {
-      this.connections.push({id: conn.id, conn: conn})
-      conn.on('data', data => {
-        console.log('-*-receive action:', data)
-        changeState(data)
-      })
+  setListener(listener) {
+    this.listener = listener
+  }
+
+  _safeListener(conn) {
+    return function(data) {
+      console.log('-*-data', data)
+      if (typeof(this.listener) === 'function') {
+        this.listener(data)
+      }
     }
+  }
+
+  _onConnection(conn)  {
+    console.log('-*-conn', conn)
+    this.connections.push({ id: conn.id, conn })
+    conn.on('data', this._safeListener(conn).bind(this))
   }
 
   join(id) {
     this.host = false
     this._initializePeer()
     const conn = this.peer.connect(id)
-    this.connections.push({ id, conn })
     this.peer.on('open', this._onOpen.bind(this))
+    this.peer.on('close', console.log('-*-close'))
+    this.peer.on('error', console.log('-*-error'))
+    this._onConnection(conn)
   }
 
   sendToHost(action) {
-    this.connections.map(({ conn }) => {
-      console.log('-*-send action:', action)
-      conn.on('open', () => conn.send({action: action}))
-    })
+    console.log('-*-send', action)
+    this.connections.map(({ conn }) => conn.send({ action: action }))
   }
 
   _onOpen() {

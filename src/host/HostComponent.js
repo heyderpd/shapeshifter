@@ -6,7 +6,8 @@ class HostComponent extends Component {
 
   constructor() {
     super()
-    Connections.startHost(this.changeState.bind(this))
+    Connections.startHost()
+    Connections.setListener(this.changeState.bind(this))
 
     this.state = {
       id: Connections.getId(),
@@ -23,7 +24,11 @@ class HostComponent extends Component {
       <div>
         <h1>host</h1>
         <h2>{this.state.id}</h2>
-        <span>{this.state.data}</span>
+        <br/>
+        <div>
+          <button onClick={() => Connections.sendToHost('uala')}>send uala</button>
+          <input value={this.state.data}/>
+        </div>
       </div>
     )
   }
