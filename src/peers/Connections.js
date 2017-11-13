@@ -1,78 +1,82 @@
 import Peer from 'peerjs'
 import randomstring from 'randomstring'
 
-class Connections {
-
-  constructor() {
-    this.host = false
-    this.peer = null
-    this.opened = false
-    this.id = null
-    this.connections = []
-    this.listener
+const Connection = () => {
+  const state = {
+    peer: null,
+    connection: null,
+    onData: null,
+    opened: false,
+    host: false,
+    join: false
   }
 
-  _initializePeer() {
-    this.id = randomstring.generate(5)
-    this.peer = new Peer(this.id, { key: '86tco3u7cf03sor' })
+  const _onOpen = () => {
+    state.opened = true
   }
 
-  startHost() {
-    this.host = true
-    this._initializePeer()
-    this.peer.on('connection', this._onConnection.bind(this))
+  const _onClose = () => {
+    state.opened = false
   }
 
-  setListener(listener) {
-    this.listener = listener
+  const _setHost = () => {
+    state.host = true
+    state.join = false
   }
 
-  _safeListener(conn) {
-    return function(data) {
-      console.log('-*-data', data)
-      if (typeof(this.listener) === 'function') {
-        this.listener(data)
-      }
+  const _setJoin = () => {
+    state.host = false
+    state.join = true
+  }
+
+  const _initialize = () => {
+    state.peer = new Peer(randomstring.generate(5), { key: 'shkdal024cp7gb9' })
+  }
+
+  const _safeOnData = data => {
+    if (typeof(state.onData) === 'function') {
+      state.onData(data)
     }
   }
 
-  _onConnection(conn)  {
-    console.log('-*-conn', conn)
-    this.connections.push({ id: conn.id, conn })
-    conn.on('data', this._safeListener(conn).bind(this))
+  const _onConnection = conn => {
+    state.connection = conn
+    state.peer.on('open', _onOpen)
+    state.peer.on('close', _onClose)
+    state.peer.on('error', err => (_onClose(), console.log('-*-error', err)))
+    conn.on('data', _safeOnData)
   }
 
-  join(id) {
-    this.host = false
-    this._initializePeer()
-    const conn = this.peer.connect(id)
-    this.peer.on('open', this._onOpen.bind(this))
-    this.peer.on('close', console.log('-*-close'))
-    this.peer.on('error', console.log('-*-error'))
-    this._onConnection(conn)
+  const object = {}
+
+  object.host = () => {
+    _setHost()
+    state.peer.on('connection', _onConnection)
+    return object
   }
 
-  sendToHost(action) {
-    console.log('-*-send', action)
-    this.connections.map(({ conn }) => conn.send({ action: action }))
+  object.join = id => {
+    _setJoin()
+    const conn = state.peer.connect(id)
+    _onConnection(conn)
+    return object
   }
 
-  _onOpen() {
-    this.opened = true
+  object.getId = () => state.peer.id
+
+  object.setOnData = onData => {
+    state.onData = onData
+    return object
   }
 
-  getId() {
-    return this.id
+  object.send = data => {
+    state.connection.send(data)
+    return object
   }
 
-  isHost() {
-    return this.host
-  }
+  _initialize()
 
-  getGuestConnections() {
-    return this.connections || [];
-  }
-
+  return object
 }
 
-export default new Connections()
+export default Connection

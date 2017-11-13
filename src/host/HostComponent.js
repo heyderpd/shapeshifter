@@ -2,21 +2,24 @@ import React, { Component } from 'react'
 
 import Connections from '../peers/Connections'
 
+const conn = new Connections()
+
 class HostComponent extends Component {
 
   constructor() {
     super()
-    Connections.startHost()
-    Connections.setListener(this.changeState.bind(this))
+    conn
+      .host()
+      .setOnData(this.changeState.bind(this))
 
     this.state = {
-      id: Connections.getId(),
+      id: conn.getId(),
       data: ''
     }
   }
 
-  changeState({ action }) {
-    this.setState({ data: action })
+  changeState(data) {
+    this.setState({ data })
   }
 
   render() {
@@ -26,7 +29,7 @@ class HostComponent extends Component {
         <h2>{this.state.id}</h2>
         <br/>
         <div>
-          <button onClick={() => Connections.sendToHost('uala')}>send uala</button>
+          <button onClick={() => conn.send('uala')}>send uala</button>
           <input value={this.state.data}/>
         </div>
       </div>

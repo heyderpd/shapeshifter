@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 
 import Connections from '../peers/Connections'
 
+const conn = new Connections()
 
 class JoinComponent extends Component {
 
@@ -19,13 +20,14 @@ class JoinComponent extends Component {
     })
   }
 
-  changeState({ action }) {
-    this.setState({ data: action })
+  changeState(data) {
+    this.setState({ data })
   }
 
   startJoin() {
-    Connections.join(this.state.joinTo)
-    Connections.setListener(this.changeState.bind(this))
+    conn
+      .join(this.state.joinTo)
+      .setOnData(this.changeState.bind(this))
   }
 
   render() {
@@ -38,7 +40,7 @@ class JoinComponent extends Component {
         </div>
         <br/>
         <div>
-          <button onClick={() => Connections.sendToHost('xabla')}>send xabla</button>
+          <button onClick={() => conn.send('xabla')}>send xabla</button>
           <input value={this.state.data}/>
         </div>
       </div>
